@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.length = 1;
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -25,7 +26,38 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <h5>Participants</h5>
         `;
+
+        const participantsList = document.createElement("ul");
+        participantsList.className = "participants-list";
+        details.participants.forEach((participant) => {
+          const participantItem = document.createElement("li");
+          const participantEmail = document.createElement("span");
+          participantEmail.textContent = participant;
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.className = "remove-participant";
+          removeButton.textContent = "×";
+          removeButton.title = `Unregister ${participant}`;
+          removeButton.setAttribute("aria-label", `Unregister ${participant}`);
+          removeButton.addEventListener("click", async () => {
+            const response = await fetch(
+              `/activities/${encodeURIComponent(name)}/signup?email=${encodeURIComponent(participant)}`,
+              { method: "DELETE" }
+            );
+
+            if (response.ok) {
+              fetchActivities();
+            }
+          });
+
+          participantItem.appendChild(participantEmail);
+          participantItem.appendChild(removeButton);
+          participantsList.appendChild(participantItem);
+        });
+        activityCard.appendChild(participantsList);
 
         activitiesList.appendChild(activityCard);
 
@@ -62,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
